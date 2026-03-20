@@ -5,16 +5,36 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTaskContext } from '@/src/context/TaskContext';
 import { GlassCard } from '@/components/GlassCard';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/src/context/ThemeContext';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme, themePreference, setThemePreference, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
   const { profile, updateProfile } = useTaskContext();
   const { tasks } = useTaskContext();
   const [name, setName] = useState(profile.name);
   const [stepGoal, setStepGoal] = useState(profile.dailyStepGoal.toString());
   const [isEditing, setIsEditing] = useState(false);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Please grant camera roll permissions to upload images');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      updateProfile({ image: result.assets[0].uri });
+    }
+  };
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -48,9 +68,21 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInDown.delay(200).duration(500)}>
           <GlassCard style={styles.profileCard}>
             <View style={styles.avatarContainer}>
-              <View style={[styles.avatar, { backgroundColor: '#3B82F6' }]}>
-                <Text style={styles.avatarText}>{profile.name.charAt(0).toUpperCase()}</Text>
-              </View>
+              {profile.image ? (
+                <TouchableOpacity onPress={pickImage} style={styles.avatarImageContainer}>
+                  <Animated.Image source={{ uri: profile.image }} style={styles.avatarImage} />
+                  <View style={styles.editImageOverlay}>
+                    <Ionicons name="camera" size={20} color="#fff" />
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={pickImage} style={[styles.avatar, { backgroundColor: '#3B82F6' }]}>
+                  <Text style={styles.avatarText}>{profile.name.charAt(0).toUpperCase()}</Text>
+                  <View style={styles.editImageOverlay}>
+                    <Ionicons name="camera" size={20} color="#fff" />
+                  </View>
+                </TouchableOpacity>
+              )}
             </View>
             <View style={styles.profileInfo}>
               {isEditing ? (
@@ -170,12 +202,25 @@ export default function ProfileScreen() {
               </View>
               <Ionicons name="chevron-forward" size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.settingItem}>
+            <TouchableOpacity style={styles.settingItem} onPress={() => {
+              const options = ['Light', 'Dark', 'System'];
+              Alert.alert('Choose Theme', 'Select your preferred theme', [
+                { text: 'Light', onPress: () => setThemePreference('light') },
+                { text: 'Dark', onPress: () => setThemePreference('dark') },
+                { text: 'System', onPress: () => setThemePreference('system') },
+                { text: 'Cancel', style: 'cancel' },
+              ]);
+            }}>
               <View style={styles.settingLeft}>
                 <Ionicons name="color-palette-outline" size={24} color="#8B5CF6" />
-                <Text style={[styles.settingText, { color: isDark ? '#fff' : '#1f2937' }]}>
-                  Appearance
-                </Text>
+                <View>
+                  <Text style={[styles.settingText, { color: isDark ? '#fff' : '#1f2937' }]}>
+                    Appearance
+                  </Text>
+                  <Text style={[styles.settingSubtext, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
+                    {themePreference.charAt(0).toUpperCase() + themePreference.slice(1)}
+                  </Text>
+                </View>
               </View>
               <Ionicons name="chevron-forward" size={20} color={isDark ? '#9ca3af' : '#6b7280'} />
             </TouchableOpacity>
@@ -236,17 +281,39 @@ const styles = StyleSheet.create({
   avatarContainer: {
     marginBottom: 16,
   },
+  avatarImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   avatarText: {
     fontSize: 32,
     fontWeight: '700',
     color: '#fff',
+  },
+  editImageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 24,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileInfo: {
     alignItems: 'center',
@@ -370,6 +437,10 @@ const styles = StyleSheet.create({
   },
   settingText: {
     fontSize: 16,
+  },
+  settingSubtext: {
+    fontSize: 12,
+    marginTop: 2,
   },
   footer: {
     alignItems: 'center',

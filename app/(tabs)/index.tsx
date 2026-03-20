@@ -9,12 +9,12 @@ import { TaskItem } from '@/components/TaskItem';
 import { FilterTabs } from '@/components/FilterTabs';
 import { EmptyState } from '@/components/EmptyState';
 import { GlassCard } from '@/components/GlassCard';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/src/context/ThemeContext';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const { tasks, toggleTask, deleteTask, getFilteredTasks, getStats, profile } = useTaskContext();
   const [filter, setFilter] = useState<'all' | 'completed' | 'pending'>('all');
   const [refreshing, setRefreshing] = useState(false);

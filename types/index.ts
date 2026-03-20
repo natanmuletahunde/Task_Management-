@@ -18,6 +18,7 @@ export interface Task {
 
 export interface UserProfile {
   name: string;
+  image?: string;
   dailyStepGoal: number;
   theme: 'light' | 'dark' | 'system';
 }

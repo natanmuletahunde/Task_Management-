@@ -16,7 +16,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTaskContext } from '@/src/context/TaskContext';
 import { Category, Priority } from '@/types';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/src/context/ThemeContext';
 
 const categories: Category[] = ['Work', 'Personal', 'Fitness', 'Shopping', 'Health', 'Other'];
 const priorities: Priority[] = ['low', 'medium', 'high'];
@@ -24,8 +24,8 @@ const priorities: Priority[] = ['low', 'medium', 'high'];
 export default function AddTaskModal() {
   const router = useRouter();
   const { taskId } = useLocalSearchParams<{ taskId?: string }>();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const { tasks, addTask, updateTask } = useTaskContext();
 
   const existingTask = taskId ? tasks.find((t) => t.id === taskId) : null;

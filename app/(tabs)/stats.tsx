@@ -6,14 +6,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTaskContext } from '@/src/context/TaskContext';
 import { usePedometer } from '@/src/hooks/usePedometer';
 import { GlassCard } from '@/components/GlassCard';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/src/context/ThemeContext';
 import { Task } from '@/types';
 
 export default function StatsScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const { tasks, getStats, profile, getTasksByCategory } = useTaskContext();
-  const { stepCount, isAvailable, permissionGranted, isLoading, refresh } = usePedometer();
+  const { stepCount, isAvailable, isLoading } = usePedometer();
   const [refreshing, setRefreshing] = useState(false);
 
   const stats = getStats();
@@ -28,7 +28,6 @@ export default function StatsScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    refresh();
     setTimeout(() => setRefreshing(false), 1000);
   };
 
@@ -77,15 +76,6 @@ export default function StatsScreen() {
                 <Ionicons name="alert-circle-outline" size={20} color="#F59E0B" />
                 <Text style={[styles.unavailableText, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
                   Pedometer not available on this device
-                </Text>
-              </View>
-            )}
-
-            {isAvailable && !permissionGranted && !isLoading && (
-              <View style={styles.unavailableContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#F59E0B" />
-                <Text style={[styles.unavailableText, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
-                  Enable motion permissions to track steps
                 </Text>
               </View>
             )}
