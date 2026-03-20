@@ -1,98 +1,213 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useTaskContext } from '@/src/context/TaskContext';
+import { TaskItem } from '@/components/TaskItem';
+import { FilterTabs } from '@/components/FilterTabs';
+import { EmptyState } from '@/components/EmptyState';
+import { GlassCard } from '@/components/GlassCard';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const { tasks, toggleTask, deleteTask, getFilteredTasks, getStats, profile } = useTaskContext();
+  const [filter, setFilter] = useState<'all' | 'completed' | 'pending'>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const filteredTasks = getFilteredTasks(filter);
+  const stats = getStats();
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#f5f5f5' }]} edges={['top']}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={styles.scrollContent}>
+        <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.header}>
+          <View>
+            <Text style={[styles.greeting, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
+              {getGreeting()}
+            </Text>
+            <Text style={[styles.name, { color: isDark ? '#fff' : '#1f2937' }]}>
+              {profile.name}!
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/modal')}
+            style={[styles.addButton, { backgroundColor: '#3B82F6' }]}>
+            <Ionicons name="add" size={28} color="white" />
+          </TouchableOpacity>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(200).duration(500)}>
+          <GlassCard style={styles.statsCard}>
+            <View style={styles.statsHeader}>
+              <Text style={[styles.statsTitle, { color: isDark ? '#fff' : '#1f2937' }]}>
+                Today's Progress
+              </Text>
+              <Text style={[styles.completionRate, { color: '#3B82F6' }]}>
+                {stats.completionRate.toFixed(0)}%
+              </Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${stats.completionRate}%`, backgroundColor: '#3B82F6' },
+                  ]}
+                />
+              </View>
+            </View>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: '#10B981' }]}>{stats.completed}</Text>
+                <Text style={[styles.statLabel, { color: isDark ? '#9ca3af' : '#6b7280' }]}>Completed</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: '#F59E0B' }]}>{stats.pending}</Text>
+                <Text style={[styles.statLabel, { color: isDark ? '#9ca3af' : '#6b7280' }]}>Pending</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: '#8B5CF6' }]}>{stats.total}</Text>
+                <Text style={[styles.statLabel, { color: isDark ? '#9ca3af' : '#6b7280' }]}>Total</Text>
+              </View>
+            </View>
+          </GlassCard>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.filterContainer}>
+          <FilterTabs
+            activeFilter={filter}
+            onFilterChange={setFilter}
+            counts={{
+              all: tasks.length,
+              completed: tasks.filter((t) => t.completed).length,
+              pending: tasks.filter((t) => !t.completed).length,
+            }}
+          />
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.tasksContainer}>
+          {filteredTasks.length === 0 ? (
+            <EmptyState />
+          ) : (
+            filteredTasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onToggle={() => toggleTask(task.id)}
+                onDelete={() => deleteTask(task.id)}
+                onPress={() => router.push({ pathname: '/modal', params: { taskId: task.id } })}
+              />
+            ))
+          )}
+        </Animated.View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    marginTop: 16,
+  },
+  greeting: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  name: {
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  addButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  statsCard: {
+    marginBottom: 24,
+  },
+  statsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  statsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  completionRate: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  progressBarContainer: {
+    marginBottom: 20,
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+  },
+  filterContainer: {
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  tasksContainer: {
+    flex: 1,
   },
 });
