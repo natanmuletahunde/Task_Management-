@@ -34,6 +34,21 @@ export default function HomeScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
+  const handleToggleTask = (taskId: string, isCompleted: boolean) => {
+    toggleTask(taskId);
+    if (!isCompleted) {
+      setTimeout(() => setFilter('completed'), 300);
+    }
+  };
+
+  const getCompletionMessage = () => {
+    const completedCount = tasks.filter(t => t.completed).length;
+    if (completedCount === tasks.length && tasks.length > 0) {
+      return "🎉 All tasks completed!";
+    }
+    return null;
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#0f0f0f' : '#f5f5f5' }]} edges={['top']}>
       <ScrollView
@@ -106,6 +121,15 @@ export default function HomeScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.tasksContainer}>
+          {getCompletionMessage() && (
+            <Animated.View entering={FadeInDown.delay(300).duration(500)}>
+              <GlassCard style={styles.completionCard}>
+                <Text style={[styles.completionText, { color: '#10B981' }]}>
+                  {getCompletionMessage()}
+                </Text>
+              </GlassCard>
+            </Animated.View>
+          )}
           {filteredTasks.length === 0 ? (
             <EmptyState />
           ) : (
@@ -113,7 +137,7 @@ export default function HomeScreen() {
               <TaskItem
                 key={task.id}
                 task={task}
-                onToggle={() => toggleTask(task.id)}
+                onToggle={() => handleToggleTask(task.id, task.completed)}
                 onDelete={() => deleteTask(task.id)}
                 onPress={() => router.push({ pathname: '/modal', params: { taskId: task.id } })}
               />
@@ -209,5 +233,15 @@ const styles = StyleSheet.create({
   },
   tasksContainer: {
     flex: 1,
+  },
+  completionCard: {
+    marginBottom: 16,
+    alignItems: 'center',
+    paddingVertical: 16,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+  },
+  completionText: {
+    fontSize: 18,
+    fontWeight: '700',
   },
 });

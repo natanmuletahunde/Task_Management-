@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/src/context/ThemeContext';
 
 interface FilterTabsProps {
   activeFilter: 'all' | 'completed' | 'pending';
@@ -8,15 +9,15 @@ interface FilterTabsProps {
   counts: { all: number; completed: number; pending: number };
 }
 
-const filters: Array<{ key: 'all' | 'completed' | 'pending'; label: string }> = [
-  { key: 'all', label: 'All' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'completed', label: 'Completed' },
+const filters: Array<{ key: 'all' | 'completed' | 'pending'; label: string; icon: string }> = [
+  { key: 'all', label: 'All', icon: 'list' },
+  { key: 'pending', label: 'Pending', icon: 'time-outline' },
+  { key: 'completed', label: 'Done', icon: 'checkmark-circle' },
 ];
 
 export function FilterTabs({ activeFilter, onFilterChange, counts }: FilterTabsProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? 'rgba(30, 30, 30, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]}>
@@ -29,6 +30,11 @@ export function FilterTabs({ activeFilter, onFilterChange, counts }: FilterTabsP
             activeFilter === filter.key && styles.activeTab,
             activeFilter === filter.key && { backgroundColor: '#3B82F6' },
           ]}>
+          <Ionicons
+            name={filter.icon as any}
+            size={18}
+            color={activeFilter === filter.key ? '#fff' : (isDark ? '#9ca3af' : '#6b7280')}
+          />
           <Text
             style={[
               styles.tabText,

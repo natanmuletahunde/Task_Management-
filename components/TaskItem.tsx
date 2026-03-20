@@ -1,11 +1,11 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
+import { useTheme } from '@/src/context/ThemeContext';
 import { Task } from '@/types';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 
 interface TaskItemProps {
   task: Task;
@@ -30,11 +30,11 @@ const priorityIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const handleToggle = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onToggle();
   };
 
@@ -65,14 +65,15 @@ export function TaskItem({ task, onToggle, onDelete, onPress }: TaskItemProps) {
         <View style={styles.content}>
           <View style={styles.header}>
             <TouchableOpacity onPress={handleToggle} style={styles.checkbox}>
-              <View
+              <Animated.View
+                entering={task.completed ? ZoomIn.springify().damping(15) : undefined}
                 style={[
                   styles.checkboxInner,
                   { borderColor: categoryColors[task.category] },
-                  task.completed && { backgroundColor: categoryColors[task.category] },
+                  task.completed && { backgroundColor: '#10B981', borderColor: '#10B981' },
                 ]}>
                 {task.completed && <Ionicons name="checkmark" size={16} color="white" />}
-              </View>
+              </Animated.View>
             </TouchableOpacity>
             <View style={styles.titleContainer}>
               <Text
@@ -170,7 +171,8 @@ const styles = StyleSheet.create({
   },
   completedText: {
     textDecorationLine: 'line-through',
-    opacity: 0.6,
+    opacity: 0.5,
+    color: '#9ca3af',
   },
   description: {
     fontSize: 13,
